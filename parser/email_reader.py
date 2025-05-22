@@ -30,18 +30,24 @@ def parse_email(raw_email):
     else:
         return []
 
-def extract_table_data(html_content):
-    soup = BeautifulSoup(html_content, "lxml")
+def extract_table_data(html):
+    soup = BeautifulSoup(html, "html.parser")
     table = soup.find("table")
+
+    if not table:
+        print("⚠️  No table found in this email.")
+        return None  # or return [] if you prefer
+
     rows = table.find_all("tr")[1:]  # Skip header
-    extracted = []
+    data = []
 
     for row in rows:
-        cols = [td.text.strip() for td in row.find_all("td")]
-        extracted.append(cols)
-    return extracted
+        cols = row.find_all("td")
+        data.append([col.get_text(strip=True) for col in cols])
 
-def store_to_db(data, table_name="reports"):
+    return data
+
+def store_to_db(data, table_name="email_data"):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(f'''
